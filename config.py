@@ -6,9 +6,10 @@ FRAMES_DIR      = os.path.join(DATA_DIR, "frames")
 FEATURES_DIR    = os.path.join(DATA_DIR, "features")
 RESULTS_DIR     = "results"
 
-CLASSES             = ["clap", "dive", "run", "shoot_ball", "swing_baseball"]
+CLASSES             = ["clap", "dive", "run", "shoot_ball", "swing_baseball",
+                       "jump", "kick_ball", "ride_bike", "walk", "punch"]
 NUM_FRAMES          = 8
-MAX_VIDEOS_PER_CLASS = 25
+MAX_VIDEOS_PER_CLASS = 50
 TOPK                = 4
 
 HMDB51_URL  = "http://serre-lab.clps.brown.edu/wp-content/uploads/2013/10/hmdb51_org.rar"

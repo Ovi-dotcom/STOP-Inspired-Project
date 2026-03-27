@@ -21,7 +21,7 @@ def plot_accuracy_bar(results, save_path=None):
     ax.set_ylabel("Top-1 Accuracy (%)", fontsize=12)
     ax.set_title(
         "Zero-Shot Video Classification\n"
-        "Pooling Strategy Comparison (CLIP ViT-B/32, 5 HMDB51 Classes)",
+        "Pooling Strategy Comparison (CLIP ViT-B/32, 10 HMDB51 Classes)",
         fontsize=12
     )
     ax.set_ylim(0, 100)
@@ -67,7 +67,7 @@ def plot_per_class_accuracy(per_class_results, save_path=None):
     ax.set_ylabel("Top-1 Accuracy (%)", fontsize=11)
     ax.set_title(
         "Per-Class Accuracy Breakdown\n"
-        "Pooling Strategy Comparison (CLIP ViT-B/32, 5 HMDB51 Classes)",
+        "Pooling Strategy Comparison (CLIP ViT-B/32, 10 HMDB51 Classes)",
         fontsize=12
     )
     ax.set_xticks(x)
