@@ -1,0 +1,7 @@
+openai-clip
+opencv-python
+numpy
+matplotlib
+requests
+tqdm
+rarfile
