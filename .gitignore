@@ -1,5 +1,4 @@
 data/*
 !data/.gitkeep
 __pycache__/
-app.py
-templates/
+results/

@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>STOP-Inspired Video Classifier</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #0a0a1a;
+    color: #00fff7;
+    font-family: 'Share Tech Mono', monospace;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Animated grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background-image:
+      linear-gradient(rgba(0,255,247,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,255,247,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 40px 20px;
+  }
+
+  /* Header */
+  .header {
+    text-align: center;
+    margin-bottom: 50px;
+  }
+
+  .header h1 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 2.2rem;
+    font-weight: 900;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: #00fff7;
+    text-shadow: 0 0 20px #00fff7, 0 0 40px #00fff7;
+    animation: pulse 3s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { text-shadow: 0 0 20px #00fff7, 0 0 40px #00fff7; }
+    50%       { text-shadow: 0 0 30px #00fff7, 0 0 80px #00fff7, 0 0 100px #00bfff; }
+  }
+
+  .header p {
+    margin-top: 10px;
+    font-size: 0.85rem;
+    color: #4a9fa0;
+    letter-spacing: 2px;
+  }
+
+  .subtitle-line {
+    width: 200px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, #00fff7, transparent);
+    margin: 15px auto;
+  }
+
+  /* Classes badge row */
+  .classes-row {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 40px;
+  }
+
+  .class-badge {
+    background: rgba(0,255,247,0.05);
+    border: 1px solid rgba(0,255,247,0.2);
+    color: #4a9fa0;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  /* Upload box */
+  .upload-box {
+    border: 2px dashed rgba(0,255,247,0.3);
+    border-radius: 12px;
+    padding: 50px 30px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: rgba(0,255,247,0.02);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .upload-box:hover, .upload-box.drag-over {
+    border-color: #00fff7;
+    background: rgba(0,255,247,0.05);
+    box-shadow: 0 0 30px rgba(0,255,247,0.1), inset 0 0 30px rgba(0,255,247,0.03);
+  }
+
+  .upload-icon {
+    font-size: 3rem;
+    margin-bottom: 15px;
+    display: block;
+  }
+
+  .upload-box h3 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1rem;
+    letter-spacing: 2px;
+    margin-bottom: 10px;
+  }
+
+  .upload-box p {
+    font-size: 0.8rem;
+    color: #4a9fa0;
+  }
+
+  #file-input { display: none; }
+
+  .file-name {
+    margin-top: 15px;
+    font-size: 0.8rem;
+    color: #00fff7;
+    display: none;
+  }
+
+  /* Analyse button */
+  .btn-analyse {
+    display: block;
+    width: 100%;
+    margin-top: 20px;
+    padding: 16px;
+    background: transparent;
+    border: 2px solid #00fff7;
+    color: #00fff7;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1rem;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-analyse::before {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%;
+    width: 100%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(0,255,247,0.1), transparent);
+    transition: left 0.5s ease;
+  }
+
+  .btn-analyse:hover::before { left: 100%; }
+
+  .btn-analyse:hover {
+    background: rgba(0,255,247,0.08);
+    box-shadow: 0 0 20px rgba(0,255,247,0.3);
+  }
+
+  .btn-analyse:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  /* Loading */
+  .loading {
+    display: none;
+    text-align: center;
+    padding: 30px;
+  }
+
+  .loading-bar {
+    width: 100%;
+    height: 2px;
+    background: rgba(0,255,247,0.1);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: 15px;
+  }
+
+  .loading-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #00fff7, #00bfff);
+    animation: loading-anim 2s ease-in-out infinite;
+    box-shadow: 0 0 10px #00fff7;
+  }
+
+  @keyframes loading-anim {
+    0%   { width: 0%;   margin-left: 0; }
+    50%  { width: 60%;  margin-left: 20%; }
+    100% { width: 0%;   margin-left: 100%; }
+  }
+
+  .loading p {
+    font-size: 0.85rem;
+    color: #4a9fa0;
+    letter-spacing: 2px;
+    animation: blink 1.5s infinite;
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.4; }
+  }
+
+  /* Results */
+  .results { display: none; margin-top: 40px; }
+
+  .result-header {
+    text-align: center;
+    margin-bottom: 30px;
+  }
+
+  .predicted-label {
+    font-size: 0.8rem;
+    letter-spacing: 3px;
+    color: #4a9fa0;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .predicted-class {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 2.5rem;
+    font-weight: 900;
+    color: #00fff7;
+    text-shadow: 0 0 30px #00fff7;
+    letter-spacing: 4px;
+  }
+
+  .confidence-badge {
+    display: inline-block;
+    margin-top: 10px;
+    padding: 6px 20px;
+    background: rgba(0,255,247,0.1);
+    border: 1px solid rgba(0,255,247,0.4);
+    border-radius: 20px;
+    font-size: 0.9rem;
+    color: #00fff7;
+  }
+
+  /* Panels */
+  .panel {
+    background: rgba(0,255,247,0.02);
+    border: 1px solid rgba(0,255,247,0.15);
+    border-radius: 12px;
+    padding: 25px;
+    margin-bottom: 25px;
+  }
+
+  .panel-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.75rem;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: #4a9fa0;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .panel-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: rgba(0,255,247,0.15);
+  }
+
+  .panel img {
+    width: 100%;
+    border-radius: 8px;
+    border: 1px solid rgba(0,255,247,0.1);
+  }
+
+  /* Error */
+  .error-msg {
+    display: none;
+    text-align: center;
+    padding: 20px;
+    color: #ff4444;
+    border: 1px solid rgba(255,68,68,0.3);
+    border-radius: 8px;
+    margin-top: 20px;
+    font-size: 0.85rem;
+    letter-spacing: 1px;
+  }
+
+  /* Footer */
+  .footer {
+    text-align: center;
+    margin-top: 60px;
+    font-size: 0.7rem;
+    color: rgba(0,255,247,0.2);
+    letter-spacing: 2px;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Header -->
+  <div class="header">
+    <h1>⬡ STOP Classifier</h1>
+    <div class="subtitle-line"></div>
+    <p>Temporal Variance-Weighted Video Classification &nbsp;|&nbsp; CLIP ViT-B/32</p>
+  </div>
+
+  <!-- Supported classes -->
+  <div class="classes-row">
+    {% for cls in classes %}
+    <span class="class-badge">{{ cls.replace('_', ' ') }}</span>
+    {% endfor %}
+  </div>
+
+  <!-- Upload -->
+  <div class="upload-box" id="upload-box" onclick="document.getElementById('file-input').click()">
+    <span class="upload-icon">⬡</span>
+    <h3>Drop Video File Here</h3>
+    <p>or click to browse &nbsp;·&nbsp; .mp4 / .avi / .mov supported</p>
+    <p style="margin-top:8px; font-size:0.75rem;">Recommended: 3–5 sec clip of a single action</p>
+    <div class="file-name" id="file-name"></div>
+    <input type="file" id="file-input" accept="video/*">
+  </div>
+
+  <button class="btn-analyse" id="btn-analyse" disabled onclick="analyseVideo()">
+    ⬡ &nbsp; Analyse Video
+  </button>
+
+  <!-- Loading -->
+  <div class="loading" id="loading">
+    <div class="loading-bar"><div class="loading-fill"></div></div>
+    <p>Extracting frames &amp; computing temporal weights...</p>
+  </div>
+
+  <!-- Error -->
+  <div class="error-msg" id="error-msg"></div>
+
+  <!-- Results -->
+  <div class="results" id="results">
+
+    <div class="result-header">
+      <div class="predicted-label">Predicted Action</div>
+      <div class="predicted-class" id="predicted-class">—</div>
+      <div class="confidence-badge" id="confidence-badge">0%</div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Confidence Scores — All Classes</div>
+      <img id="conf-chart" src="" alt="Confidence Chart">
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Frame Temporal Variation Weights</div>
+      <img id="weight-chart" src="" alt="Frame Weights">
+    </div>
+
+  </div>
+
+  <div class="footer">
+    STOP-Inspired Project &nbsp;·&nbsp; CLIP ViT-B/32 &nbsp;·&nbsp; TV-Weighted Aggregation
+  </div>
+
+</div>
+
+<script>
+  const uploadBox  = document.getElementById("upload-box");
+  const fileInput  = document.getElementById("file-input");
+  const fileNameEl = document.getElementById("file-name");
+  const btnAnalyse = document.getElementById("btn-analyse");
+  let selectedFile = null;
+
+  fileInput.addEventListener("change", (e) => {
+    if (e.target.files.length > 0) {
+      selectedFile = e.target.files[0];
+      fileNameEl.textContent = "📎 " + selectedFile.name;
+      fileNameEl.style.display = "block";
+      btnAnalyse.disabled = false;
+    }
+  });
+
+  uploadBox.addEventListener("dragover", (e) => {
+    e.preventDefault();
+    uploadBox.classList.add("drag-over");
+  });
+
+  uploadBox.addEventListener("dragleave", () => {
+    uploadBox.classList.remove("drag-over");
+  });
+
+  uploadBox.addEventListener("drop", (e) => {
+    e.preventDefault();
+    uploadBox.classList.remove("drag-over");
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith("video/")) {
+      selectedFile = file;
+      fileNameEl.textContent = "📎 " + file.name;
+      fileNameEl.style.display = "block";
+      btnAnalyse.disabled = false;
+    }
+  });
+
+  async function analyseVideo() {
+    if (!selectedFile) return;
+
+    document.getElementById("loading").style.display  = "block";
+    document.getElementById("results").style.display  = "none";
+    document.getElementById("error-msg").style.display = "none";
+    btnAnalyse.disabled = true;
+
+    const formData = new FormData();
+    formData.append("video", selectedFile);
+
+    try {
+      const response = await fetch("/predict", {
+        method: "POST",
+        body: formData
+      });
+
+      const data = await response.json();
+      document.getElementById("loading").style.display = "none";
+
+      if (data.error) {
+        showError(data.error);
+        return;
+      }
+
+      document.getElementById("predicted-class").textContent  = data.predicted_class;
+      document.getElementById("confidence-badge").textContent = "Confidence: " + data.confidence + "%";
+      document.getElementById("conf-chart").src    = "data:image/png;base64," + data.conf_chart;
+      document.getElementById("weight-chart").src  = "data:image/png;base64," + data.weight_chart;
+
+      document.getElementById("results").style.display = "block";
+      btnAnalyse.disabled = false;
+
+    } catch (err) {
+      document.getElementById("loading").style.display = "none";
+      showError("Server error. Make sure app.py is running.");
+      btnAnalyse.disabled = false;
+    }
+  }
+
+  function showError(msg) {
+    const el = document.getElementById("error-msg");
+    el.textContent = "⚠ " + msg;
+    el.style.display = "block";
+    btnAnalyse.disabled = false;
+  }
+</script>
+</body>
+</html>
